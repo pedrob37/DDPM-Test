@@ -10,6 +10,8 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--output_dir", help="Location for models.")
     parser.add_argument("--model_name", help="Name of model.")
+    parser.add_argument("--data_dir", help="Location of data.")
+    parser.add_argument("--input_yaml", help="Location of input yaml.")
     parser.add_argument("--training_ids", help="Location of file with training ids.")
     parser.add_argument("--validation_ids", help="Location of file with validation ids.")
     parser.add_argument(

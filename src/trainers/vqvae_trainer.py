@@ -19,7 +19,7 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from src.data.get_train_and_val_dataloader import get_training_data_loader
+from src.data.get_train_and_val_dataloader import get_training_data_loader, create_folds
 
 
 class VQVAETrainer:
@@ -146,10 +146,15 @@ class VQVAETrainer:
         self.logger_train = SummaryWriter(log_dir=str(self.run_dir / "train"))
         self.logger_val = SummaryWriter(log_dir=str(self.run_dir / "val"))
         self.num_epochs = args.n_epochs
+        train_images, val_images, inf_images = create_folds(os.listdir(args.data_dir), fold_choice=0)
+        # Append data directory to the image paths
+        train_images = [os.path.join(args.data_dir, image) for image in train_images]
+        val_images = [os.path.join(args.data_dir, image) for image in val_images]
+        inf_images = [os.path.join(args.data_dir, image) for image in inf_images]
         self.train_loader, self.val_loader = get_training_data_loader(
             batch_size=args.batch_size,
-            training_ids=args.training_ids,
-            validation_ids=args.validation_ids,
+            training_ids=args.training_ids if args.training_ids else train_images,
+            validation_ids=args.validation_ids if args.validation_ids else val_images,
             num_workers=args.num_workers,
             cache_data=bool(args.cache_data),
             is_grayscale=bool(args.is_grayscale),
