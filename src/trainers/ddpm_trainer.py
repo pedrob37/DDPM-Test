@@ -3,11 +3,12 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
-from torch.cuda.amp import autocast
+from torch.amp import autocast
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+import os
 
-from src.data.get_train_and_val_dataloader import get_training_data_loader
+from src.data.get_train_and_val_dataloader import get_training_data_loader, create_folds
 from src.utils.simplex_noise import generate_simplex_noise
 
 from .base import BaseTrainer
@@ -23,10 +24,16 @@ class DDPMTrainer(BaseTrainer):
         self.logger_train = SummaryWriter(log_dir=str(self.run_dir / "train"))
         self.logger_val = SummaryWriter(log_dir=str(self.run_dir / "val"))
         self.num_epochs = args.n_epochs
+        self.autocast_dtype = args.autocast_dtype
+        train_images, val_images, inf_images = create_folds(os.listdir(args.data_dir), fold_choice=0)
+        # Append data directory to the image paths
+        train_images = [os.path.join(args.data_dir, image) for image in train_images]
+        val_images = [os.path.join(args.data_dir, image) for image in val_images]
+        inf_images = [os.path.join(args.data_dir, image) for image in inf_images]
         self.train_loader, self.val_loader = get_training_data_loader(
             batch_size=args.batch_size,
-            training_ids=args.training_ids,
-            validation_ids=args.validation_ids,
+            training_ids=args.training_ids if args.training_ids else train_images,
+            validation_ids=args.validation_ids if args.validation_ids else val_images,
             augmentation=bool(args.augmentation),
             num_workers=args.num_workers,
             cache_data=bool(args.cache_data),
@@ -81,7 +88,7 @@ class DDPMTrainer(BaseTrainer):
                 with torch.no_grad():
                     images = F.pad(input=images, pad=self.latent_pad, mode="constant", value=0)
             self.optimizer.zero_grad(set_to_none=True)
-            with autocast(enabled=True):
+            with autocast(self.device, enabled=True, dtype=eval(self.autocast_dtype)):
                 timesteps = torch.randint(
                     0,
                     self.inferer.scheduler.num_train_timesteps,
@@ -141,7 +148,7 @@ class DDPMTrainer(BaseTrainer):
             if self.do_latent_pad:
                 images = F.pad(input=images, pad=self.latent_pad, mode="constant", value=0)
             self.optimizer.zero_grad(set_to_none=True)
-            with autocast(enabled=True):
+            with autocast(self.device, enabled=True, dtype=eval(self.autocast_dtype)):
                 timesteps = torch.randint(
                     0,
                     self.inferer.scheduler.num_train_timesteps,

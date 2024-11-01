@@ -2,6 +2,7 @@ import argparse
 import ast
 
 from src.trainers import DDPMTrainer
+from omegaconf import OmegaConf
 
 
 def parse_args():
@@ -9,6 +10,8 @@ def parse_args():
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--output_dir", help="Location for models.")
+    parser.add_argument("--data_dir", help="Location of data.")
+    parser.add_argument("--input_yaml", help="Location of input yaml.")
     parser.add_argument("--model_name", help="Name of model.")
     parser.add_argument("--training_ids", help="Location of file with training ids.")
     parser.add_argument("--validation_ids", help="Location of file with validation ids.")
@@ -44,6 +47,10 @@ def parse_args():
         "--model_type",
         default="small",
         help="Small or big model.",
+    )
+    parser.add_argument(
+        "--autocast_dtype",
+        default="torch.float32",
     )
     parser.add_argument(
         "--beta_schedule",
@@ -128,5 +135,13 @@ def parse_args():
 # to run using DDP, run torchrun --nproc_per_node=1 --nnodes=1 --node_rank=0  train_ddpm.py --args
 if __name__ == "__main__":
     args = parse_args()
+    config = OmegaConf.load(args.input_yaml)
+    # Overwrite args with config
+    # Convert argparse arguments to a dictionary
+    args_dict = vars(args)
+
+    # Merge argparse arguments with the config, prioritizing config values
+    args = OmegaConf.create(args_dict)
+    args = OmegaConf.merge(args, config)
     trainer = DDPMTrainer(args)
     trainer.train(args)

@@ -1,0 +1,4 @@
+spatial_dimension: 2
+batch_size: 32
+model_type: "small"
+autocast_dtype: "torch.float16"

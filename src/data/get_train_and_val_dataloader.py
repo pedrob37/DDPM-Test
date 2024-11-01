@@ -2,18 +2,55 @@ import pandas as pd
 import torch.distributed as dist
 from monai import transforms
 from monai.data import CacheDataset, Dataset, ThreadDataLoader, partition_dataset
+import os
 
 
-def get_data_dicts(ids_path: str, shuffle: bool = False, first_n=False):
+def create_folds(some_list, train_split=0.8, val_split=0.1, fold_choice=0):
+    some_list_len = len(some_list)
+    if fold_choice == 0:
+        output_train_list = some_list[: int(some_list_len * train_split)]
+        output_val_list = some_list[int(some_list_len * train_split): int(some_list_len * (train_split + val_split))]
+    elif fold_choice == 1:
+        output_train_list = some_list[int(val_split * some_list_len): int(some_list_len * (train_split + val_split))]
+        output_val_list = some_list[: int(val_split * some_list_len)]
+    elif fold_choice == 2:
+        output_train_list = (
+                some_list[: int(val_split * some_list_len)]
+                + some_list[2 * int(val_split * some_list_len): int(some_list_len * (train_split + val_split))]
+        )
+        output_val_list = some_list[int(val_split * some_list_len): 2 * int(some_list_len * val_split)]
+    elif fold_choice == 3:
+        output_train_list = (
+                some_list[: 2 * int(val_split * some_list_len)]
+                + some_list[3 * int(val_split * some_list_len): int(some_list_len * (train_split + val_split))]
+        )
+        output_val_list = some_list[2 * int(val_split * some_list_len): 3 * int(some_list_len * val_split)]
+    elif fold_choice == 4:
+        output_train_list = (
+                some_list[: 3 * int(val_split * some_list_len)]
+                + some_list[4 * int(val_split * some_list_len): int(some_list_len * (train_split + val_split))]
+        )
+        output_val_list = some_list[3 * int(val_split * some_list_len): 4 * int(some_list_len * val_split)]
+    output_inf_list = some_list[int(some_list_len * (train_split + val_split)):]
+    return output_train_list, output_val_list, output_inf_list
+
+
+def get_data_dicts(use_csv: bool = True, ids_path: str = None, shuffle: bool = False, first_n=False):
 
     """Get data dicts for data loaders."""
-    df = pd.read_csv(ids_path, sep=",")
-    if shuffle:
-        df = df.sample(frac=1, random_state=1)
-    df = list(df)
     data_dicts = []
-    for row in df:
-        data_dicts.append({"image": (row)})
+    if use_csv:
+        df = pd.read_csv(ids_path, sep=",")
+        if shuffle:
+            df = df.sample(frac=1, random_state=1)
+        df = list(df)
+        for row in df:
+            data_dicts.append({"image": (row)})
+    else:
+        # Use ids_path as a directory
+        for direc in ids_path:
+            for file in os.listdir(os.path.join(direc, "anat")):
+                data_dicts.append({"image": os.path.join(direc, "anat", file)})
     if first_n is not False:
         data_dicts = data_dicts[:first_n]
 
@@ -90,7 +127,9 @@ def get_training_data_loader(
     else:
         train_transforms = val_transforms
 
-    val_dicts = get_data_dicts(validation_ids, shuffle=False, first_n=first_n)
+    # Create data dicts without resorting to csv
+    val_dicts = get_data_dicts(ids_path=validation_ids, shuffle=False, first_n=first_n, use_csv=False)
+
     if first_n:
         val_dicts = val_dicts[:first_n]
 
@@ -116,7 +155,7 @@ def get_training_data_loader(
     if only_val:
         return val_loader
 
-    train_dicts = get_data_dicts(training_ids, shuffle=False, first_n=first_n)
+    train_dicts = get_data_dicts(ids_path=training_ids, shuffle=False, first_n=first_n, use_csv=False)
 
     if cache_data:
         train_ds = CacheDataset(
