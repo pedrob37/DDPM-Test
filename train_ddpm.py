@@ -140,8 +140,8 @@ if __name__ == "__main__":
     # Convert argparse arguments to a dictionary
     args_dict = vars(args)
 
-    # Merge argparse arguments with the config, prioritizing config values
+    # Merge argparse arguments with the config, prioritizing the argparse arguments: Swap the order of the arguments to prioritize the config
     args = OmegaConf.create(args_dict)
-    args = OmegaConf.merge(args, config)
+    args = OmegaConf.merge(config, args)
     trainer = DDPMTrainer(args)
     trainer.train(args)

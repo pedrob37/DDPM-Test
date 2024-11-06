@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument(
         "--eval_freq",
         type=int,
-        default=10,
+        default=3,
         help="Number of epochs to between evaluations.",
     )
     parser.add_argument(

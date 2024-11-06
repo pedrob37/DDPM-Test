@@ -1,7 +1,5 @@
 lpips==0.1.4
 matplotlib
-torch
-monai[nibabel]
 monai-generative
 pandas
 scipy

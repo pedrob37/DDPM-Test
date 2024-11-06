@@ -273,6 +273,25 @@ class VQVAETrainer:
             l1_loss += recons_loss.item()
             generator_epoch_loss += total_generator_loss.item()
             discriminator_epoch_loss += discriminator_loss.item()
+
+            # Check if nan in any of the losses
+            if torch.isnan(recons_loss) or torch.isnan(perceptual_loss) or torch.isnan(jukebox_loss) or torch.isnan(adversarial_loss) or torch.isnan(total_generator_loss) or torch.isnan(discriminator_loss):
+                print("Nan in loss")
+                # Print min and max of image
+                print(images.min(), images.max())
+
+            # Check if inf in any of the losses
+            if torch.isinf(recons_loss) or torch.isinf(perceptual_loss) or torch.isinf(jukebox_loss) or torch.isinf(adversarial_loss) or torch.isinf(total_generator_loss) or torch.isinf(discriminator_loss):
+                print("Inf in loss")
+                # Print min and max of image
+                print(images.min(), images.max())
+
+            # Check if large value in any of the losses
+            if recons_loss > 1e5 or perceptual_loss > 1e5 or jukebox_loss > 1e5 or adversarial_loss > 1e5 or total_generator_loss > 1e5 or discriminator_loss > 1e5:
+                print("Large value in loss")
+                # Print min and max of image
+                print(images.min(), images.max())
+
             epoch_step += images.shape[0]
             self.global_step += images.shape[0]
             progress_bar.set_postfix(
@@ -292,7 +311,9 @@ class VQVAETrainer:
                 global_step=self.global_step,
             )
             self.logger_train.add_scalar(
-                tag="jukebox_loss", scalar_value=jukebox_loss.item(), global_step=self.global_step
+                tag="jukebox_loss",
+                scalar_value=jukebox_loss.item(),
+                global_step=self.global_step
             )
             self.logger_train.add_scalar(
                 tag="adversarial_loss",
