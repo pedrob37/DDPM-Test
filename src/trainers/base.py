@@ -124,7 +124,7 @@ class BaseTrainer:
         self.image_size = int(args.image_size) if args.image_size else args.image_size
         if args.latent_pad:
             self.do_latent_pad = True
-            self.latent_pad = args.latent_pad
+            self.latent_pad = list(args.latent_pad)
             self.inverse_latent_pad = [-x for x in self.latent_pad]
         else:
             self.do_latent_pad = False
