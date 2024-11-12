@@ -330,6 +330,26 @@ class VQVAETrainer:
                 scalar_value=discriminator_loss.item(),
                 global_step=self.global_step,
             )
+
+            if self.global_step % 1000 == 0:
+                fig = plt.figure()
+                for i in range(2):
+                    plt.subplot(2, 2, i * 2 + 1)
+                    if self.spatial_dimension == 2:
+                        sl = np.s_[i, 0, :, :]
+                    else:
+                        sl = np.s_[i, 0, :, :, images.shape[4] // 2]
+                    plt.imshow(images[sl].cpu(), cmap="gray")
+                    if i == 0:
+                        plt.title("Image")
+                    plt.subplot(2, 2, i * 2 + 2)
+                    plt.imshow(reconstruction[sl].cpu(), cmap="gray")
+                    if i == 0:
+                        plt.title("Recon")
+                plt.show()
+                self.logger_val.add_figure(
+                    tag="train-recons", figure=fig, global_step=self.global_step
+                )
             if self.quick_test:
                 break
         epoch_loss = generator_epoch_loss / epoch_step
@@ -380,7 +400,7 @@ class VQVAETrainer:
                 global_val_step += images.shape[0]
 
                 # plot some recons
-                if step == 0:
+                if step % 1000 == 0:
                     fig = plt.figure()
                     for i in range(2):
                         plt.subplot(2, 2, i * 2 + 1)
@@ -397,5 +417,5 @@ class VQVAETrainer:
                             plt.title("Recon")
                     plt.show()
                     self.logger_val.add_figure(
-                        tag="recons", figure=fig, global_step=self.global_step
+                        tag="val-recons", figure=fig, global_step=self.global_step + step
                     )

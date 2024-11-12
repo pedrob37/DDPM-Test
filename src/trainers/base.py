@@ -100,6 +100,7 @@ class BaseTrainer:
             schedule=self.beta_schedule,
             beta_start=self.beta_start,
             beta_end=self.beta_end,
+            clip_sample=False,
         )
         if self.snr_shift != 1:
             print("Changing scheduler parameters to shift SNR")

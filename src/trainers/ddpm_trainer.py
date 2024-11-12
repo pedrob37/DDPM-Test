@@ -96,7 +96,7 @@ class DDPMTrainer(BaseTrainer):
                     device=self.device,
                 ).long()
 
-                # noise images
+                # Noise images
                 if self.simplex_noise:
                     noise = generate_simplex_noise(
                         self.simplex, x=images, t=timesteps, in_channels=images.shape[1]
@@ -127,6 +127,52 @@ class DDPMTrainer(BaseTrainer):
             )
             if self.quick_test:
                 break
+
+            if self.global_step % 1000:
+                # get some samples
+                image_size = images.shape[2]
+                if self.spatial_dimension == 2:
+                    if image_size >= 128:
+                        num_samples = 4
+                        fig, ax = plt.subplots(2, 2)
+                    else:
+                        num_samples = 8
+                        fig, ax = plt.subplots(2, 4)
+                elif self.spatial_dimension == 3:
+                    num_samples = 2
+                    fig, ax = plt.subplots(2, 3)
+                noise = torch.randn((num_samples, *tuple(images.shape[1:]))).to(self.device)
+                latent_samples = self.inferer.sample(
+                    input_noise=noise,
+                    diffusion_model=self.model,
+                    scheduler=self.scheduler,
+                    verbose=True,
+                )
+                if self.do_latent_pad:
+                    latent_samples = F.pad(
+                        input=latent_samples, pad=self.inverse_latent_pad, mode="constant", value=0
+                    )
+                samples = self.vqvae_model.decode_stage_2_outputs(latent_samples)
+                if self.spatial_dimension == 2:
+                    for i in range(len(ax.flat)):
+                        ax.flat[i].imshow(
+                            np.transpose(samples[i, ...].cpu().numpy(), (1, 2, 0)), cmap="gray"
+                        )
+                        plt.axis("off")
+                elif self.spatial_dimension == 3:
+                    slice_ratios = [0.25, 0.5, 0.75]
+                    slices = [int(ratio * samples.shape[-1]) for ratio in slice_ratios]
+                    for i in range(num_samples):
+                        for j in range(len(slices)):
+                            ax[i][j].imshow(
+                                samples[i, 0, :, :, slices[j]].cpu().numpy(),
+                                cmap="gray",
+                            )
+                            # ax[i][j].imshow(
+                            #     np.transpose(samples[i, :, :, :, slices[j]].cpu().numpy(), (1, 2, 0)),
+                            #     cmap="gray",
+                            # )
+                self.logger_val.add_figure(tag="train-samples", figure=fig, global_step=self.global_step)
         epoch_loss = epoch_loss / epoch_step
         return epoch_loss
 
@@ -181,43 +227,48 @@ class DDPMTrainer(BaseTrainer):
                 }
             )
 
-        # get some samples
-        image_size = images.shape[2]
-        if self.spatial_dimension == 2:
-            if image_size >= 128:
-                num_samples = 4
-                fig, ax = plt.subplots(2, 2)
-            else:
-                num_samples = 8
-                fig, ax = plt.subplots(2, 4)
-        elif self.spatial_dimension == 3:
-            num_samples = 2
-            fig, ax = plt.subplots(2, 3)
-        noise = torch.randn((num_samples, *tuple(images.shape[1:]))).to(self.device)
-        latent_samples = self.inferer.sample(
-            input_noise=noise,
-            diffusion_model=self.model,
-            scheduler=self.scheduler,
-            verbose=True,
-        )
-        if self.do_latent_pad:
-            latent_samples = F.pad(
-                input=latent_samples, pad=self.inverse_latent_pad, mode="constant", value=0
-            )
-        samples = self.vqvae_model.decode_stage_2_outputs(latent_samples)
-        if self.spatial_dimension == 2:
-            for i in range(len(ax.flat)):
-                ax.flat[i].imshow(
-                    np.transpose(samples[i, ...].cpu().numpy(), (1, 2, 0)), cmap="gray"
+            # get some samples
+            if step % 1000 == 0:
+                image_size = images.shape[2]
+                if self.spatial_dimension == 2:
+                    if image_size >= 128:
+                        num_samples = 4
+                        fig, ax = plt.subplots(2, 2)
+                    else:
+                        num_samples = 8
+                        fig, ax = plt.subplots(2, 4)
+                elif self.spatial_dimension == 3:
+                    num_samples = 2
+                    fig, ax = plt.subplots(2, 3)
+                noise = torch.randn((num_samples, *tuple(images.shape[1:]))).to(self.device)
+                latent_samples = self.inferer.sample(
+                    input_noise=noise,
+                    diffusion_model=self.model,
+                    scheduler=self.scheduler,
+                    verbose=True,
                 )
-                plt.axis("off")
-        elif self.spatial_dimension == 3:
-            slice_ratios = [0.25, 0.5, 0.75]
-            slices = [int(ratio * samples.shape[4]) for ratio in slice_ratios]
-            for i in range(num_samples):
-                for j in range(len(slices)):
-                    ax[i][j].imshow(
-                        np.transpose(samples[i, :, :, :, slices[j]].cpu().numpy(), (1, 2, 0)),
-                        cmap="gray",
+                if self.do_latent_pad:
+                    latent_samples = F.pad(
+                        input=latent_samples, pad=self.inverse_latent_pad, mode="constant", value=0
                     )
-        self.logger_val.add_figure(tag="samples", figure=fig, global_step=self.global_step)
+                samples = self.vqvae_model.decode_stage_2_outputs(latent_samples)
+                if self.spatial_dimension == 2:
+                    for i in range(len(ax.flat)):
+                        ax.flat[i].imshow(
+                            np.transpose(samples[i, ...].cpu().numpy(), (1, 2, 0)), cmap="gray"
+                        )
+                        plt.axis("off")
+                elif self.spatial_dimension == 3:
+                    slice_ratios = [0.25, 0.5, 0.75]
+                    slices = [int(ratio * samples.shape[-1]) for ratio in slice_ratios]
+                    for i in range(num_samples):
+                        for j in range(len(slices)):
+                            ax[i][j].imshow(
+                                samples[i, 0, :, :, slices[j]].cpu().numpy(),
+                                cmap="gray",
+                            )
+                            # ax[i][j].imshow(
+                            #     np.transpose(samples[i, :, :, :, slices[j]].cpu().numpy(), (1, 2, 0)),
+                            #     cmap="gray",
+                            # )
+                self.logger_val.add_figure(tag="val-samples", figure=fig, global_step=self.global_step+step)
