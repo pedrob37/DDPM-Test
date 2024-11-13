@@ -43,8 +43,8 @@ def parse_args():
     parser.add_argument(
         "--vqvae_num_res_channels", default=[128, 128, 128, 256], type=ast.literal_eval
     )
-    parser.add_argument("--vqvae_num_embeddings", default=256, type=int)
-    parser.add_argument("--vqvae_embedding_dim", default=256, type=int)
+    parser.add_argument("--vqvae_num_embeddings", default=512, type=int)
+    parser.add_argument("--vqvae_embedding_dim", default=8, type=int)
     parser.add_argument("--vqvae_decay", default=0.99, type=float)
     parser.add_argument("--vqvae_commitment_cost", default=0.25, type=float)
     parser.add_argument("--vqvae_epsilon", default=1e-5, type=float)

@@ -128,7 +128,8 @@ class DDPMTrainer(BaseTrainer):
             if self.quick_test:
                 break
 
-            if self.global_step % 1000:
+            if self.global_step % 1000 == 0:
+                print("Test")
                 # get some samples
                 image_size = images.shape[2]
                 if self.spatial_dimension == 2:
@@ -165,7 +166,7 @@ class DDPMTrainer(BaseTrainer):
                     for i in range(num_samples):
                         for j in range(len(slices)):
                             ax[i][j].imshow(
-                                samples[i, 0, :, :, slices[j]].cpu().numpy(),
+                                samples[i, 0, :, :, slices[j]].detach().cpu().numpy(),
                                 cmap="gray",
                             )
                             # ax[i][j].imshow(
@@ -264,7 +265,7 @@ class DDPMTrainer(BaseTrainer):
                     for i in range(num_samples):
                         for j in range(len(slices)):
                             ax[i][j].imshow(
-                                samples[i, 0, :, :, slices[j]].cpu().numpy(),
+                                samples[i, 0, :, :, slices[j]].detach().cpu().numpy(),
                                 cmap="gray",
                             )
                             # ax[i][j].imshow(

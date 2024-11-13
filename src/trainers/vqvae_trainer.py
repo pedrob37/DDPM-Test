@@ -49,6 +49,10 @@ class VQVAETrainer:
 
         # set up model
         self.spatial_dimension = args.spatial_dimension
+
+        # Print values for embedding dimension and number
+        print(f"Embedding dimension: {args.vqvae_embedding_dim}")
+        print(f"Number of embeddings: {args.vqvae_num_embeddings}")
         vqvae_args = {
             "spatial_dims": args.spatial_dimension,
             "in_channels": args.vqvae_in_channels,
@@ -201,9 +205,9 @@ class VQVAETrainer:
 
             if args.checkpoint_every != 0 and (epoch + 1) % args.checkpoint_every == 0:
                 self.save_checkpoint(
-                    self.run_dir / f"checkpoint_{epoch+1}.pth",
+                    self.run_dir / f"checkpoint_{epoch + 1}.pth",
                     epoch,
-                    save_message=f"Saving checkpoint at epoch {epoch+1}",
+                    save_message=f"Saving checkpoint at epoch {epoch + 1}",
                 )
 
             if (epoch + 1) % args.eval_freq == 0:
@@ -246,11 +250,11 @@ class VQVAETrainer:
             else:
                 adv_weight = self.adv_weight
             total_generator_loss = (
-                recons_loss
-                + quantization_loss
-                + self.perceptual_weight * perceptual_loss
-                + jukebox_loss
-                + adv_weight * adversarial_loss
+                    recons_loss
+                    + quantization_loss
+                    + self.perceptual_weight * perceptual_loss
+                    + jukebox_loss
+                    + adv_weight * adversarial_loss
             )
 
             total_generator_loss.backward()
@@ -275,13 +279,15 @@ class VQVAETrainer:
             discriminator_epoch_loss += discriminator_loss.item()
 
             # Check if nan in any of the losses
-            if torch.isnan(recons_loss) or torch.isnan(perceptual_loss) or torch.isnan(jukebox_loss) or torch.isnan(adversarial_loss) or torch.isnan(total_generator_loss) or torch.isnan(discriminator_loss):
+            if torch.isnan(recons_loss) or torch.isnan(perceptual_loss) or torch.isnan(jukebox_loss) or torch.isnan(
+                    adversarial_loss) or torch.isnan(total_generator_loss) or torch.isnan(discriminator_loss):
                 print("Nan in loss")
                 # Print min and max of image
                 print(images.min(), images.max())
 
             # Check if inf in any of the losses
-            if torch.isinf(recons_loss) or torch.isinf(perceptual_loss) or torch.isinf(jukebox_loss) or torch.isinf(adversarial_loss) or torch.isinf(total_generator_loss) or torch.isinf(discriminator_loss):
+            if torch.isinf(recons_loss) or torch.isinf(perceptual_loss) or torch.isinf(jukebox_loss) or torch.isinf(
+                    adversarial_loss) or torch.isinf(total_generator_loss) or torch.isinf(discriminator_loss):
                 print("Inf in loss")
                 # Print min and max of image
                 print(images.min(), images.max())
@@ -328,6 +334,18 @@ class VQVAETrainer:
             self.logger_train.add_scalar(
                 tag="discriminator_loss",
                 scalar_value=discriminator_loss.item(),
+                global_step=self.global_step,
+            )
+
+            self.logger_train.add_scalar(
+                tag="quantization_loss",
+                scalar_value=quantization_loss.item(),
+                global_step=self.global_step,
+            )  # Added quantization loss
+
+            self.logger_train.add_scalar(
+                tag="perplexity",
+                scalar_value=self.model.module.quantizer.perplexity,
                 global_step=self.global_step,
             )
 
@@ -379,11 +397,11 @@ class VQVAETrainer:
                     logits_fake, target_is_real=True, for_discriminator=False
                 )
                 total_generator_loss = (
-                    recons_loss
-                    + quantization_loss
-                    + self.perceptual_weight * perceptual_loss
-                    + jukebox_loss
-                    + self.adv_weight * adversarial_loss
+                        recons_loss
+                        + quantization_loss
+                        + self.perceptual_weight * perceptual_loss
+                        + jukebox_loss
+                        + self.adv_weight * adversarial_loss
                 )
 
                 self.logger_val.add_scalar(
@@ -394,6 +412,19 @@ class VQVAETrainer:
                     scalar_value=total_generator_loss.item(),
                     global_step=global_val_step,
                 )
+
+                self.logger_val.add_scalar(
+                    tag="quantization_loss",
+                    scalar_value=quantization_loss.item(),
+                    global_step=global_val_step,
+                )  # Added quantization loss
+
+                self.logger_val.add_scalar(
+                    tag="perplexity",
+                    scalar_value=self.model.module.quantizer.perplexity,
+                    global_step=global_val_step,
+                )
+
                 # self.logger_val.add_scalar(
                 #     tag="discriminator_loss", scalar_value=disc_epoch_loss, global_step=global_val_step
                 # )
