@@ -48,6 +48,7 @@ def get_data_dicts(use_csv: bool = True, ids_path: str = None, shuffle: bool = F
             data_dicts.append({"image": (row)})
     else:
         # Use ids_path as a directory
+        # ids_path = ids_path[:100]
         for direc in ids_path:
             for file in os.listdir(os.path.join(direc, "anat")):
                 data_dicts.append({"image": os.path.join(direc, "anat", file)})

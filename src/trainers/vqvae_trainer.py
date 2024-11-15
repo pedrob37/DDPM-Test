@@ -102,7 +102,9 @@ class VQVAETrainer:
         self.l1_loss = L1Loss()
         self.adv_loss = PatchAdversarialLoss(criterion="least_squares")
         self.adv_weight = args.adversarial_weight
-        self.perceptual_weight = 0.001
+        self.perceptual_weight = args.perceptual_weight
+        self.quantization_weight = args.quantization_weight
+        self.jukebox_weight = args.jukebox_weight
         self.adversarial_warmup = bool(args.adversarial_warmup)
         # set up optimizer, loss, checkpoints
         self.run_dir = Path(args.output_dir) / args.model_name
@@ -125,9 +127,9 @@ class VQVAETrainer:
         self.run_dir.mkdir(exist_ok=True)
         with open(self.run_dir / "vqvae_config.json", "w") as f:
             json.dump(vqvae_args, f, indent=4)
-        self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=2.5e-5)
+        # self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=2.5e-5)
         if checkpoint_path.exists():
-            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            self.optimizer_g.load_state_dict(checkpoint["optimizer_state_dict"])
 
         # wrap the model with DistributedDataParallel module
         if self.ddp:
@@ -174,7 +176,7 @@ class VQVAETrainer:
                 "epoch": epoch + 1,  # save epoch+1, so we resume on the next epoch
                 "global_step": self.global_step,
                 "model_state_dict": self.model.module.state_dict(),
-                "optimizer_state_dict": self.optimizer.state_dict(),
+                "optimizer_state_dict": self.optimizer_g.state_dict(),
                 "best_loss": self.best_loss,
             }
             print(save_message)
@@ -184,7 +186,7 @@ class VQVAETrainer:
                 "epoch": epoch + 1,  # save epoch+1, so we resume on the next epoch
                 "global_step": self.global_step,
                 "model_state_dict": self.model.state_dict(),
-                "optimizer_state_dict": self.optimizer.state_dict(),
+                "optimizer_state_dict": self.optimizer_g.state_dict(),
                 "best_loss": self.best_loss,
             }
             print(save_message)
@@ -251,9 +253,9 @@ class VQVAETrainer:
                 adv_weight = self.adv_weight
             total_generator_loss = (
                     recons_loss
-                    + quantization_loss
+                    + self.quantization_weight * quantization_loss
                     + self.perceptual_weight * perceptual_loss
-                    + jukebox_loss
+                    + self.jukebox_weight * jukebox_loss
                     + adv_weight * adversarial_loss
             )
 
@@ -357,11 +359,11 @@ class VQVAETrainer:
                         sl = np.s_[i, 0, :, :]
                     else:
                         sl = np.s_[i, 0, :, :, images.shape[4] // 2]
-                    plt.imshow(images[sl].cpu(), cmap="gray")
+                    plt.imshow(images[sl].detach().cpu(), cmap="gray")
                     if i == 0:
                         plt.title("Image")
                     plt.subplot(2, 2, i * 2 + 2)
-                    plt.imshow(reconstruction[sl].cpu(), cmap="gray")
+                    plt.imshow(reconstruction[sl].detach().cpu(), cmap="gray")
                     if i == 0:
                         plt.title("Recon")
                 plt.show()

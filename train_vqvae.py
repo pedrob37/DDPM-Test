@@ -7,7 +7,7 @@ from src.trainers import VQVAETrainer
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed to use.")
     parser.add_argument("--output_dir", help="Location for models.")
     parser.add_argument("--model_name", help="Name of model.")
     parser.add_argument("--data_dir", help="Location of data.")
@@ -50,7 +50,7 @@ def parse_args():
     parser.add_argument("--vqvae_epsilon", default=1e-5, type=float)
     parser.add_argument("--vqvae_dropout", default=0.0, type=float)
     parser.add_argument("--vqvae_ddp_sync", default=True, type=bool)
-    parser.add_argument("--vqvae_learning_rate", default=3e-4, type=float)
+    parser.add_argument("--vqvae_learning_rate", default=1e-4, type=float)
 
     # training param
     parser.add_argument("--batch_size", type=int, default=4, help="Training batch size.")
@@ -72,6 +72,24 @@ def parse_args():
         type=float,
         default=0.01,
         help="Weight for adversarial component.",
+    )
+    parser.add_argument(
+        "--quantization_weight",
+        type=float,
+        default=1,
+        help="Weight for quantization component.",
+    )
+    parser.add_argument(
+        "--jukebox_weight",
+        type=float,
+        default=1,
+        help="Weight for jukebox component.",
+    )
+    parser.add_argument(
+        "--perceptual_weight",
+        type=float,
+        default=1,
+        help="Weight for perceptual component.",
     )
     parser.add_argument(
         "--adversarial_warmup",
