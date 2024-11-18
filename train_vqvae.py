@@ -39,9 +39,9 @@ def parse_args():
         default=((2, 4, 1, 1, 0), (2, 4, 1, 1, 0), (2, 4, 1, 1, 0), (2, 4, 1, 1, 0)),
         type=ast.literal_eval,
     )
-    parser.add_argument("--vqvae_num_channels", default=[128, 128, 128, 256], type=ast.literal_eval)
+    parser.add_argument("--vqvae_num_channels", default="[128, 128, 128, 256]", type=str)
     parser.add_argument(
-        "--vqvae_num_res_channels", default=[128, 128, 128, 256], type=ast.literal_eval
+        "--vqvae_num_res_channels", default="[128, 128, 128, 256]", type=str
     )
     parser.add_argument("--vqvae_num_embeddings", default=512, type=int)
     parser.add_argument("--vqvae_embedding_dim", default=8, type=int)
