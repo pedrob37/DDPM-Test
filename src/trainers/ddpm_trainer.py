@@ -82,13 +82,19 @@ class DDPMTrainer(BaseTrainer):
         epoch_loss = 0
         epoch_step = 0
         self.model.train()
+
+        # self.device can vary in type, therefore account for this
+        if isinstance(self.device, str):
+            device_dtype = "cuda" if "cuda" in self.device else "cpu"
+        else:
+            device_dtype = self.device.type
         for step, batch in progress_bar:
             images = self.vqvae_model.encode_stage_2_inputs(batch["image"].to(self.device))
             if self.do_latent_pad:
                 with torch.no_grad():
                     images = F.pad(input=images, pad=self.latent_pad, mode="constant", value=0)
             self.optimizer.zero_grad(set_to_none=True)
-            with autocast(self.device, enabled=True, dtype=eval(self.autocast_dtype)):
+            with autocast(device_type=device_dtype, enabled=True, dtype=eval(self.autocast_dtype)):
                 timesteps = torch.randint(
                     0,
                     self.inferer.scheduler.num_train_timesteps,
@@ -190,12 +196,18 @@ class DDPMTrainer(BaseTrainer):
         epoch_loss = 0
         global_val_step = self.global_step
         val_steps = 0
+
+        # self.device can vary in type, therefore account for this
+        if isinstance(self.device, str):
+            device_dtype = "cuda" if "cuda" in self.device else "cpu"
+        else:
+            device_dtype = self.device.type
         for step, batch in progress_bar:
             images = self.vqvae_model.encode_stage_2_inputs(batch["image"].to(self.device))
             if self.do_latent_pad:
                 images = F.pad(input=images, pad=self.latent_pad, mode="constant", value=0)
             self.optimizer.zero_grad(set_to_none=True)
-            with autocast(self.device, enabled=True, dtype=eval(self.autocast_dtype)):
+            with autocast(device_type=device_dtype, enabled=True, dtype=eval(self.autocast_dtype)):
                 timesteps = torch.randint(
                     0,
                     self.inferer.scheduler.num_train_timesteps,
