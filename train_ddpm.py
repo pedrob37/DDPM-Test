@@ -136,7 +136,6 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     config = OmegaConf.load(args.input_yaml)
-    # Overwrite args with config
     # Convert argparse arguments to a dictionary
     args_dict = vars(args)
 

@@ -4,7 +4,7 @@
 #
 # $ create_docker_image.sh
 set -ex
-TAG=ddpm-ood
+TAG=ddpm-monai-ngc25
 
 cp ../requirements.txt .
 docker build --tag "${USER}:${TAG}" . \

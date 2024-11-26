@@ -146,6 +146,8 @@ class VQVAETrainer:
                 broadcast_buffers=False,
             )
 
+            self.discriminator = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.discriminator)
+
         if args.quick_test:
             print("Quick test enabled, only running on a single train and eval batch.")
         self.quick_test = args.quick_test

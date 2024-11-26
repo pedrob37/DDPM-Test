@@ -1,5 +1,6 @@
 import argparse
 import ast
+from omegaconf import OmegaConf
 
 from src.trainers import VQVAETrainer
 
@@ -124,5 +125,12 @@ def parse_args():
 # to run using DDP, run torchrun --nproc_per_node=1 --nnodes=1 --node_rank=0  train_ddpm.py --args
 if __name__ == "__main__":
     args = parse_args()
+    config = OmegaConf.load(args.input_yaml)
+    # Convert argparse arguments to a dictionary
+    args_dict = vars(args)
+
+    # Merge argparse arguments with the config, prioritizing the argparse arguments: Swap the order of the arguments to prioritize the config
+    args = OmegaConf.create(args_dict)
+    args = OmegaConf.merge(config, args)
     trainer = VQVAETrainer(args)
     trainer.train(args)
