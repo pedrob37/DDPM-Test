@@ -9,7 +9,7 @@ USER root
 
 EXPOSE 8888
 
-COPY requirements.txt .
+COPY ../requirements.txt .
 RUN apt-get update
 RUN apt-get -y install sudo
 

@@ -1,0 +1,9 @@
+spatial_dimension: 3
+batch_size: 2
+model_type: "small"
+autocast_dtype: "torch.float32"
+model_name: "ldm-ds3-bs2-fl32"
+seed: 42
+cache_data: 0
+is_grayscale: 1
+eval_freq: 5
