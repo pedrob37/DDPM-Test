@@ -98,7 +98,7 @@ def parse_args():
     parser.add_argument(
         "--cache_data",
         type=int,
-        default=1,
+        default=0,
         help="Whether or not to cache data in dataloaders.",
     )
     parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")

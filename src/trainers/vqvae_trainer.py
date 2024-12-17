@@ -154,7 +154,9 @@ class VQVAETrainer:
         self.logger_train = SummaryWriter(log_dir=str(self.run_dir / "train"))
         self.logger_val = SummaryWriter(log_dir=str(self.run_dir / "val"))
         self.num_epochs = args.n_epochs
-        train_images, val_images, inf_images = create_folds(os.listdir(args.data_dir), fold_choice=0)
+        files_list = os.listdir(args.data_dir)
+        files_list.sort()
+        train_images, val_images, inf_images = create_folds(files_list, fold_choice=0)
         # Append data directory to the image paths
         train_images = [os.path.join(args.data_dir, image) for image in train_images]
         val_images = [os.path.join(args.data_dir, image) for image in val_images]
